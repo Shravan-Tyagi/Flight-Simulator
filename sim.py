@@ -58,7 +58,7 @@ plt.figure(figsize=(12, 8))
 plt.subplot(4, 1, 1)
 plt.plot(time_history, alt_history, color='b')
 plt.title("6-DOF Flight Dynamics Simulation Response")
-plt.ylabel("Altitude (m)")
+plt.ylabel("Altitude MSL (m)")
 plt.grid(True)
 
 plt.subplot(4, 1, 2)

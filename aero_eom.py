@@ -1,6 +1,7 @@
 # Aerodynamics, Propulsion and EOM
 
 import numpy as np
+from atm import get_indian_atmosphere
 
 
 def derivatives(state, controls, params):
@@ -12,13 +13,13 @@ def derivatives(state, controls, params):
     
     delta_t, delta_e, delta_a, delta_r = controls
 
-    altitude = max(0.0, -state.z_d)
-    rho = 1.22
+    altitude = max(0, -state.z_d)
+    rho = get_indian_atmosphere(altitude)
     
     # Kinematics
     V_total = np.sqrt(u**2 + v**2 + w**2)
-    alpha = np.arctan2(w, u) if u != 0 else 0.0
-    beta = np.arcsin(np.clip(v / V_total, -1.0, 1.0)) if V_total != 0 else 0.0
+    alpha = np.arctan2(w, u) if u != 0 else 0
+    beta = np.arcsin(np.clip(v / V_total, -1.0, 1.0)) if V_total != 0 else 0
     
     qbar = 0.5 * rho * V_total**2
     
