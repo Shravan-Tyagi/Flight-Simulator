@@ -45,23 +45,28 @@ def derivatives(state, controls, params):
     Thrust = delta_t * 3000
     
     # Wind to Body Frame
-    Fx_aero = -Drag * np.cos(alpha) + Lift * np.sin(alpha)
-    Fy_aero = Side
+    Fx_aero = -Drag * np.cos(alpha) * np.cos(beta) + Side * np.sin(beta)+ Lift * np.sin(alpha) * np.cos(beta)
+    Fy_aero = Drag * np.cos(alpha) * np.sin(beta) + Side * np.cos(beta) + Lift * np.sin(alpha) * np.sin(beta)
     Fz_aero = -Drag * np.sin(alpha) - Lift * np.cos(alpha)
     
     # Total Body Forces
-    Fx = Fx_aero + Thrust
-    Fy = Fy_aero
-    Fz = Fz_aero + params.mass * params.g * np.sin(theta)
+    Fx = Fx_aero + Thrust - params.mass * params.g * np.sin(theta)
+    Fy = Fy_aero + params.mass * params.g * np.sin(phi) * np.cos(theta)
+    Fz = Fz_aero + params.mass * params.g * np.cos(theta) * np.cos(phi)
     
     # EOM
     u_dot = (Fx / params.mass) - (q * w - r * v)
     v_dot = (Fy / params.mass) - (r * u - p * w)
     w_dot = (Fz / params.mass) - (p * v - q * u)
 
-    p_dot = L/params.Ixx
-    q_dot = M/params.Iyy
-    r_dot = N/params.Izz
+
+    p_dot = (L - q*r*(params.Izz-params.Iyy))/params.Ixx
+    q_dot = (M - p*r*(params.Ixx-params.Izz))/params.Iyy
+    r_dot = (N - p*q*(params.Iyy-params.Ixx))/params.Izz
+
+    #p_dot = L/params.Ixx
+    #q_dot = M/params.Iyy
+    #r_dot = N/params.Izz
     
     phi_dot = p + q * np.sin(phi) * np.tan(theta) + r * np.cos(phi) * np.tan(theta)
     theta_dot = q * np.cos(phi) - r * np.sin(phi)
