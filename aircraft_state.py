@@ -20,5 +20,5 @@ class AircraftState:
         # Position (m)
         self.x_n = 0
         self.y_e = 0
-        self.z_d = -100
+        self.z_d = -1000
 
