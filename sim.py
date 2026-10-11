@@ -41,7 +41,7 @@ target_altitude = 1000
 for i in range(steps):
     t = i * dt
     
-    controls = trimmed_controls   # [Throttle, Elevator, Aileron, Rudder]
+    controls = list(trimmed_controls)   # [Throttle, Elevator, Aileron, Rudder]
 
     # Controls Test:
     #if 40 <= t <= 45:
