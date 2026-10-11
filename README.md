@@ -11,9 +11,9 @@ The project combines aerospace engineering fundamentals, flight dynamics, numeri
 
 ## Project Demo
 
-![Flight Simulator Demo](images/Screenshot (1001).png)
+![Flight Simulator Demo](<images/Screenshot (1001).png>)
 
-![Flight Simulator Demo](images/Screenshot (1004).png)
+![Flight Simulator Demo](<images/Screenshot (1004).png>)
 
 ## Features
 
