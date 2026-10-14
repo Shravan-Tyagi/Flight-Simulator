@@ -3,6 +3,7 @@
 
 import numpy as np
 from ursina import *
+from ursina.shaders import lit_with_shadows_shader
 from controller import PIDController
 from aircraft import AircraftParameters
 from aircraft_state import AircraftState
@@ -31,8 +32,15 @@ current_controls = list(trimmed_controls)
 
 
 # 3D Environment Setup
-ground = Entity(model='plane', scale=(20000, 1, 20000), color=color.green.tint(-0.3), texture='white_cube', texture_scale=(200, 200))
+#ground = Entity(model='plane', scale=(20000, 1, 20000), color=color.green.tint(-0.3), texture='grass', texture_scale=(200, 200))
+ground = Entity(model=Terrain('heightmap_1', skip=4), scale=(20000, 300, 20000), color=color.green.tint(-0.6), texture='grass')
+ground.shader = lit_with_shadows_shader
+ground.collider = 'mesh'
+
 Sky()
+sun = DirectionalLight(shadows=True)
+sun.look_at(Vec3(1, -2, -1))
+AmbientLight(color=color.rgba(120, 120, 120, 0.3))
 
 
 # Aircraft Body
