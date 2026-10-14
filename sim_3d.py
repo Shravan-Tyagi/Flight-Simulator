@@ -32,15 +32,14 @@ current_controls = list(trimmed_controls)
 
 
 # 3D Environment Setup
-#ground = Entity(model='plane', scale=(20000, 1, 20000), color=color.green.tint(-0.3), texture='grass', texture_scale=(200, 200))
+#ground = Entity(model='plane', scale=(20000, 1, 20000), color=color.green.tint(-0.3), texture='grass', texture_scale=(2000, 2000))
 ground = Entity(model=Terrain('heightmap_1', skip=4), scale=(20000, 300, 20000), color=color.green.tint(-0.6), texture='grass')
 ground.shader = lit_with_shadows_shader
 ground.collider = 'mesh'
 
-Sky()
+Sky(texture='sky_sunset')
 sun = DirectionalLight(shadows=True)
 sun.look_at(Vec3(1, -2, -1))
-AmbientLight(color=color.rgba(120, 120, 120, 0.3))
 
 
 # Aircraft Body
@@ -78,11 +77,14 @@ elevator = Entity(model='cube', scale=(3.2, 0.06, 0.4), position=(0, 0.3, -3.6),
 vert_fin = Entity(model='cube', scale=(0.12, 1.6, 1.2), position=(0, 1.0, -2.8), color=color.rgb(30/255, 100/255, 220/255), parent=plane_body)
 rudder = Entity(model='cube', scale=(0.1, 1.4, 0.5), position=(0, 0.9, -3.5), color=color.rgb(220/255, 50/255, 50/255), parent=plane_body)
 
+for child in plane_body.children:
+    child.shader = lit_with_shadows_shader
+
 
 
 hud_text = Text(text='', position=(-0.85, 0.45), scale=1.1, color=color.black)
 
-# Camera configuration & Mouse Orbit variables
+# Configurations
 camera.fov = 75
 cam_distance = 18
 cam_height = 4
@@ -126,35 +128,38 @@ def update():
 
     elevator_input = current_controls[1]
     if held_keys['up arrow']:
-        elevator_input -= 0.05 * dt
+        elevator_input -= 0.1 * dt
     elif held_keys['down arrow']:
-        elevator_input += 0.05 * dt
+        elevator_input += 0.1 * dt
     else:
-        # Return slightly toward trim when released
         elevator_input += (trimmed_controls[1] - elevator_input) * 2.0 * dt
 
-    aileron_input = 0.0
+    aileron_input = current_controls[2]
     if held_keys['left arrow']:
-        aileron_input -= 0.1
-    if held_keys['right arrow']:
-        aileron_input += 0.1
-
-    rudder_input = 0.0
+        aileron_input -= 0.1 * dt
+    elif held_keys['right arrow']:
+        aileron_input += 0.1 * dt
+    else:
+        aileron_input += (trimmed_controls[2] - aileron_input) * 2.0 * dt
+    
+    rudder_input = current_controls[3]
     if held_keys['a']:
-        rudder_input += 0.1
-    if held_keys['d']:
-        rudder_input -= 0.1
+        rudder_input += 0.08 * dt
+    elif held_keys['d']:
+        rudder_input -= 0.08 * dt
+    else:
+        rudder_input += (trimmed_controls[3] - rudder_input) * 2.0 * dt
 
     # Clip control surfaces
     current_controls[1] = np.clip(elevator_input, -0.2, 0.2)
-    current_controls[2] = np.clip(aileron_input, -0.15, 0.15)
+    current_controls[2] = np.clip(aileron_input, -0.18, 0.18)
     current_controls[3] = np.clip(rudder_input, -0.15, 0.15)
 
     # Animate Control Surfaces
-    elevator.rotation_x = np.degrees(current_controls[1]) * 40.0
-    left_aileron.rotation_x = -np.degrees(current_controls[2]) * 40.0
-    right_aileron.rotation_x = np.degrees(current_controls[2]) * 40.0
-    rudder.rotation_y = -np.degrees(current_controls[3]) * 40.0
+    elevator.rotation_x = -np.clip(np.degrees(current_controls[1]) * 5.2, -60, 60)
+    left_aileron.rotation_x = -np.clip(np.degrees(current_controls[2]) * 5.8, -60, 60)
+    right_aileron.rotation_x = np.clip(np.degrees(current_controls[2]) * 5.8, -60, 60)
+    rudder.rotation_y = -np.clip(np.degrees(current_controls[3]) * 7, -60, 60)
 
 
     # Solver
@@ -168,7 +173,6 @@ def update():
     pitch_deg = np.degrees(state.theta)
     yaw_deg = np.degrees(state.psi)
 
-    # Ursina rotation order mapping: (pitch, yaw, roll)
     plane_body.rotation = Vec3(-pitch_deg, yaw_deg, roll_deg)
 
     # Mouse Orbit & Chase Camera
@@ -176,13 +180,10 @@ def update():
         orbit_y += mouse.velocity[0] * 150
         orbit_x -= mouse.velocity[1] * 150
 
-    # Base chase camera position anchored to plane
     base_cam_pos = plane_body.position - (plane_body.forward * cam_distance) + Vec3(0, cam_height, 0)
     
-    # Apply mouse orbit rotation around the aircraft
     if is_orbiting or orbit_x != 0 or orbit_y != 0:
         offset = base_cam_pos - plane_body.position
-        # Apply simple orbit offsets
         camera.position = plane_body.position + offset + Vec3(orbit_y * 0.1, orbit_x * 0.1, 0)
     else:
         camera.position = base_cam_pos
