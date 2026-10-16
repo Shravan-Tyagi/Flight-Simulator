@@ -22,7 +22,12 @@ window.color = color.light_gray
 window.fps_counter.enabled = True
 
 # Initialize Aircraft State & Parameters
-state = AircraftState(50, -7000, -7000, -50)
+
+# Start Position:
+sp = [-7000, 0, -7000]
+Alt = 50
+
+state = AircraftState(50, sp[2], sp[0], sp[1] - Alt)
 params = AircraftParameters()
 
 # Trim
@@ -58,8 +63,6 @@ scene.fog_density = (10000, 32000)
 #           position=(rx, 0, rz), color=color.rgb(90, 90, 90))
 
 
-# Start Position:
-sp = [-7000, 0, -7000]
 
 custom_structures = [
     # [X, Y, Z, SX, SY, SZ, RotY, Color]
@@ -67,10 +70,10 @@ custom_structures = [
     [0, 0, 1000, 80, 0.2, 1500, 0, color.dark_gray],
     
     # Airport Hangar
-    [100, 15, 320, 80, 20, 40, 0, color.gray],
+    [100, 10, 320, 80, 20, 40, 0, color.gray],
     
     # Airport ATC Tower
-    [80, 50, 1000, 20, 50, 20, 0, color.gray],
+    [80, 25, 1000, 20, 50, 20, 0, color.gray],
 ]
 
 for data in custom_structures:
@@ -118,22 +121,29 @@ cam_distance = 18
 cam_height = 4
 camera.lens.near = 1
 camera.lens.far = 10000
+camera_mode = "chase"
 orbit_x = 0
 orbit_y = 0
 is_orbiting = False
 
 
 def input(key):
-    global is_orbiting, cam_distance, orbit_x, orbit_y
+    global is_orbiting, cam_distance, orbit_x, orbit_y, camera_mode
     if key == 'left mouse down':
         is_orbiting = True
     elif key == 'left mouse up':
         is_orbiting = False
     elif key == 'r':
-        # Reset POV and zoom
         orbit_x = 0
         orbit_y = 0
         cam_distance = 18
+    elif key == 'v':
+        if camera_mode == "chase":
+            camera_mode = "tower"
+            camera.fov = 70
+        else:
+            camera_mode = "chase"
+            camera.fov = 75
     elif key == 'scroll up':
         cam_distance = max(6, cam_distance - 2)
     elif key == 'scroll down':
@@ -141,7 +151,7 @@ def input(key):
 
 
 
-# Real-Time Simulation Update Loop
+# Simulation Update Loop
 def update():
     global state, current_controls, orbit_x, orbit_y, cam_distance
     
@@ -195,8 +205,7 @@ def update():
     # Solver
     state = rk4_step(state, current_controls, params, dt)
 
-    # Coordinate Mapping: NED to Ursina 3D Space
-    # NED: x_n (North -> Z), y_e (East -> X), z_d (Down -> -Y Altitude)
+    # North: z, East: x, Down: -y
     plane_body.position = Vec3(state.y_e, -state.z_d, state.x_n)
 
     roll_deg = np.degrees(state.phi)
@@ -205,30 +214,39 @@ def update():
 
     plane_body.rotation = Vec3(-pitch_deg, yaw_deg, roll_deg)
 
-    # Mouse Orbit & Chase Camera
-    if is_orbiting:
-        orbit_y += mouse.velocity[0] * 150
-        orbit_x -= mouse.velocity[1] * 150
 
-    base_cam_pos = plane_body.position - (plane_body.forward * cam_distance) + Vec3(0, cam_height, 0)
-    
-    if is_orbiting or orbit_x != 0 or orbit_y != 0:
-        offset = base_cam_pos - plane_body.position
-        camera.position = plane_body.position + offset + Vec3(orbit_y * 0.1, orbit_x * 0.1, 0)
-    else:
-        camera.position = base_cam_pos
+    # Camera View
+    if camera_mode == 'chase':
+        target_cam_pos = plane_body.position - (plane_body.forward * cam_distance) + (plane_body.up * cam_height)
+        
+        if is_orbiting:
+            orbit_y += mouse.velocity[0] * 150
+            orbit_x -= mouse.velocity[1] * 150
 
-    camera.look_at(plane_body.position + Vec3(0, 1, 0))
+        if is_orbiting or orbit_x != 0 or orbit_y != 0:
+            offset = target_cam_pos - plane_body.position
+            camera.position = plane_body.position + offset + Vec3(orbit_y * 0.1, orbit_x * 0.1, 0)
+        else:
+            camera.position = target_cam_pos
+        
+        camera.rotation = plane_body.rotation
+        
+    elif camera_mode == 'tower':
+        camera.position = Vec3(80 + sp[0], 55 + sp[1], 1000 + sp[2])
+        camera.look_at(plane_body.position)
+        camera.rotation_z = 0
 
 
     # Update HUD Telemetry
     hud_text.text = (
         f"=== FLIGHT TELEMETRY ===\n"
-        f"Altitude: {-state.z_d:.1f} m\n"
+        f"Altitude (MSL): {-state.z_d:.1f} m\n"
         f"Airspeed (u): {state.u:.1f} m/s\n"
         f"Throttle: {current_controls[0]*100:.1f}%\n"
         f"Pitch: {pitch_deg:.1f} deg | Roll: {roll_deg:.1f} deg | Yaw: {yaw_deg:.1f} deg\n"
         f"Controls: [{current_controls[0]*100:.1f}, {current_controls[1]*57.29:.1f},{current_controls[2]*57.29:.1f},{current_controls[3]*57.29:.1f}],\n\n"
+        f"Position: {plane_body.position[0]:.1f}, {plane_body.position[1]:.1f}, {plane_body.position[2]:.1f}\n"
+        f"Camera View [V]: {camera_mode.upper()}\n"
         f"=== CONTROLS ===\n"
         f"Throttle: W / S\n"
         f"Pitch (Elevator): Up / Down Arrows\n"
