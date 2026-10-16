@@ -1,9 +1,9 @@
 # Aircraft Initial States
 
 class AircraftState:
-    def __init__(self):
+    def __init__(self, u = 50, n = 0, e = 0, d = 0):
         # Translational velocities (m/s)
-        self.u = 50
+        self.u = u
         self.v = 0
         self.w = 0
         
@@ -18,7 +18,7 @@ class AircraftState:
         self.psi = 0
         
         # Position (m)
-        self.x_n = 0
-        self.y_e = 0
-        self.z_d = -300
+        self.x_n = n
+        self.y_e = e
+        self.z_d = d
 

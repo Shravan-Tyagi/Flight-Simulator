@@ -22,7 +22,7 @@ window.color = color.light_gray
 window.fps_counter.enabled = True
 
 # Initialize Aircraft State & Parameters
-state = AircraftState()
+state = AircraftState(50, -7000, -7000, -50)
 params = AircraftParameters()
 
 # Trim
@@ -33,14 +33,15 @@ current_controls = list(trimmed_controls)
 
 # 3D Environment Setup
 #ground = Entity(model='plane', scale=(20000, 1, 20000), color=color.green.tint(-0.3), texture='grass', texture_scale=(2000, 2000))
-ground = Entity(model=Terrain('heightmap_1', skip=4), scale=(20000, 300, 20000), color=color.green.tint(-0.6), texture='grass')
+ground = Entity(model=Terrain('hm.png', skip=4), scale=(30000, 2000, 30000), color=color.green.tint(-0.6), texture='grass')
 ground.shader = lit_with_shadows_shader
 ground.collider = 'mesh'
 
 Sky(texture='sky_sunset')
 sun = DirectionalLight(shadows=True)
 sun.look_at(Vec3(1, -2, -1))
-
+scene.fog_color = color.light_gray
+scene.fog_density = (10000, 32000)
 
 # Aircraft Body
 #plane_body = Entity(model='cube', scale=(2, 0.4, 6), color=color.blue)
@@ -48,13 +49,40 @@ sun.look_at(Vec3(1, -2, -1))
 #tail = Entity(model='cube', scale=(2, 1.5, 0.2), position=(0, 0.5, -2.5), parent=plane_body, color=color.white)
 
 
-# Terrain Cubes
-np.random.seed(42)
-for _ in range(100):
-    rx = np.random.uniform(-10000, 10000)
-    rz = np.random.uniform(-10000, 10000)
-    Entity(model='cube', scale=(np.random.uniform(10, 30), np.random.uniform(20, 80), np.random.uniform(10, 30)),
-           position=(rx, 0, rz), color=color.rgb(90, 90, 90))
+# Terrain
+#np.random.seed(42)
+#for _ in range(100):
+#    rx = np.random.uniform(-10000, 10000)
+#    rz = np.random.uniform(-10000, 10000)
+#    Entity(model='cube', scale=(np.random.uniform(10, 30), np.random.uniform(20, 80), np.random.uniform(10, 30)),
+#           position=(rx, 0, rz), color=color.rgb(90, 90, 90))
+
+
+# Start Position:
+sp = [-7000, 0, -7000]
+
+custom_structures = [
+    # [X, Y, Z, SX, SY, SZ, RotY, Color]
+    # Runway
+    [0, 0, 1000, 80, 0.2, 1500, 0, color.dark_gray],
+    
+    # Airport Hangar
+    [100, 15, 320, 80, 20, 40, 0, color.gray],
+    
+    # Airport ATC Tower
+    [80, 50, 1000, 20, 50, 20, 0, color.gray],
+]
+
+for data in custom_structures:
+    Entity(
+        model='cube',
+        position=(sp[0] + data[0], sp[1] + data[1], sp[2] + data[2]),
+        scale=(data[3], data[4], data[5]),
+        rotation=(0, data[6], 0),
+        color=data[7],
+        collider='box',
+        shader=lit_with_shadows_shader
+    )
 
 
 # Better Aircraft Body
@@ -88,6 +116,8 @@ hud_text = Text(text='', position=(-0.85, 0.45), scale=1.1, color=color.black)
 camera.fov = 75
 cam_distance = 18
 cam_height = 4
+camera.lens.near = 1
+camera.lens.far = 10000
 orbit_x = 0
 orbit_y = 0
 is_orbiting = False

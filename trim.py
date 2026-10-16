@@ -39,7 +39,7 @@ def trim_cost_function(x, state, params):
            (w_dot**2) * 10.0 + \
            (q_dot**2) * 100.0 + \
            (z_d_dot**2) * 10000.0 + \
-           ((s_temp.u - 50.0)**2)
+           ((s_temp.u - state.u)**2)
            
     return cost
 
